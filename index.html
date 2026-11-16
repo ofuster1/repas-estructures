@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repàs d'estructures i esforços</title>
+<style>
+:root{
+  /* Idea: full de plànol tècnic. Cartutx a dalt, pestanyes com a fulls de dibuix, paper quadriculat al fons.
+     Clar = vellum; fosc = cianotip. L'taronja és exclusivament per a forces i accions. */
+  --paper:#e9eef3; --sheet:#fbfcfd; --ink:#15233d; --ink-soft:#4b5b76; --line:#c3cddb; --grid:rgba(21,35,61,.06);
+  --force:#c2410c; --on-force:#ffffff; --comp:#1b6ca8;
+  --ok:#1f7a4d; --ok-bg:#dcf1e5; --bad:#a61e2f; --bad-bg:#f8dde0;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0c2646; --sheet:#11335b; --ink:#e7f0ff; --ink-soft:#9fbadf; --line:#2f5486; --grid:rgba(180,210,255,.07);
+    --force:#ff9a62; --on-force:#1a0f06; --comp:#6cb6ff;
+    --ok:#86e3ae; --ok-bg:#14473a; --bad:#ffa0ab; --bad-bg:#552339;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0c2646; --sheet:#11335b; --ink:#e7f0ff; --ink-soft:#9fbadf; --line:#2f5486; --grid:rgba(180,210,255,.07);
+  --force:#ff9a62; --on-force:#1a0f06; --comp:#6cb6ff;
+  --ok:#86e3ae; --ok-bg:#14473a; --bad:#ffa0ab; --bad-bg:#552339;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--paper);color:var(--ink);font:400 16px/1.55 var(--f-body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 56px}
+h1,h2,h3{text-wrap:balance}
+.top{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end;padding-bottom:16px;border-bottom:2px solid var(--ink)}
+@media(max-width:720px){.top{grid-template-columns:1fr}}
+.eyebrow{font:500 .76rem var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);margin:0}
+h1{font:700 clamp(2.5rem,7vw,4rem)/.92 var(--f-display);text-transform:uppercase;letter-spacing:.01em;margin:.15em 0 .1em}
+.lead{max-width:54ch;color:var(--ink-soft);margin:.5em 0 0}
+.cartutx{display:grid;grid-template-columns:auto auto;margin:0;border:1.5px solid var(--ink);background:var(--sheet);font:500 .76rem var(--f-mono)}
+.cartutx dt,.cartutx dd{margin:0;padding:5px 10px;border-bottom:1px solid var(--line)}
+.cartutx dt{color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;border-right:1px solid var(--line)}
+.cartutx dt:last-of-type,.cartutx dd:last-of-type{border-bottom:0}
+
+.tabs{display:flex;gap:4px;overflow-x:auto;margin:18px 0 0;border-bottom:1.5px solid var(--ink)}
+.tab{font:600 1.08rem var(--f-display);letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--ink-soft);
+  border:1.5px solid transparent;border-bottom:0;padding:8px 16px;cursor:pointer;white-space:nowrap;margin-bottom:-1.5px}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--sheet);color:var(--ink);border-color:var(--ink)}
+.tab:focus-visible,.btn:focus-visible,.chip:focus-visible,.opt:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--force);outline-offset:2px}
+.panel{background:var(--sheet);border:1.5px solid var(--ink);border-top:0;padding:26px clamp(16px,3vw,34px) 34px}
+.panel[hidden]{display:none}
+.panel h2{font:700 1.9rem/1.05 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 .5em}
+.panel h3{font:600 1.35rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:1.6em 0 .5em}
+.note{color:var(--ink-soft);font-size:.93rem;margin:.4em 0}
+fieldset{border:0;padding:0;margin:0 0 18px}
+legend{font:500 .76rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);padding:0;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 .95rem var(--f-body);border:1.5px solid var(--ink);background:transparent;color:var(--ink);padding:7px 14px;border-radius:2px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.btn{font:600 1rem var(--f-body);background:var(--force);color:var(--on-force);border:1.5px solid var(--force);padding:10px 20px;border-radius:2px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input[type=text],select{font:inherit;color:var(--ink);background:var(--sheet);border:1.5px solid var(--ink);border-radius:2px;padding:7px 10px;max-width:100%}
+
+.q-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font:500 .8rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.progress{height:6px;background:var(--line);margin:8px 0 18px}
+.progress span{display:block;height:100%;background:var(--ink)}
+.q-text{font:600 1.35rem/1.3 var(--f-body)!important;text-transform:none!important;letter-spacing:0!important;max-width:60ch;margin:.2em 0 .4em!important}
+.diagram{border:1px dashed var(--ink-soft);padding:8px;margin:12px 0;max-width:430px;background:var(--paper)}
+.diagram svg{display:block;width:100%;height:auto}
+.opts{display:grid;gap:10px;margin:16px 0}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);
+  padding:12px 14px;font:500 1rem/1.35 var(--f-body);cursor:pointer;border-radius:2px}
+.opt:hover:not(:disabled){background:var(--paper)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.opt .key{font:500 .85rem var(--f-mono);border:1.5px solid currentColor;min-width:27px;height:27px;display:grid;place-items:center;flex:none}
+.opt .mark{margin-left:auto;font-weight:700;white-space:nowrap}
+.opt.ok{background:var(--ok-bg);border-color:var(--ok)}
+.opt.bad{background:var(--bad-bg);border-color:var(--bad)}
+.opt.ok .mark{color:var(--ok)} .opt.bad .mark{color:var(--bad)}
+.why{border-left:4px solid var(--ink);background:var(--paper);padding:10px 14px;margin:0 0 16px;max-width:64ch}
+.score{font:700 4.5rem/1 var(--f-display);margin:.1em 0}
+.bars{display:grid;gap:8px;max-width:520px;margin:14px 0 20px}
+.bar-row{display:grid;grid-template-columns:170px 1fr 44px;gap:10px;align-items:center;font-size:.92rem}
+.bar-row .track{height:10px;background:var(--line)} .bar-row .fill{display:block;height:100%;background:var(--ink)}
+.bar-row b{font-family:var(--f-mono);font-weight:500;text-align:right}
+.err{border:1.5px solid var(--ink);padding:12px 14px;margin:10px 0;max-width:70ch}
+.err p{margin:.2em 0}
+
+.proj .q-text{font-size:clamp(1.5rem,3.3vw,2.5rem)!important;max-width:none}
+.proj .opts{grid-template-columns:1fr 1fr}
+.proj .opt{font-size:clamp(1.05rem,2.3vw,1.6rem);padding:16px 18px}
+.proj .opt .key{min-width:38px;height:38px;font-size:1.1rem}
+@media(max-width:700px){.proj .opts{grid-template-columns:1fr}}
+.timer{font:500 1.5rem var(--f-mono);min-width:3.4ch}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
+.team{border:1.5px solid var(--ink);padding:10px 12px}
+.team .nm{font:600 1rem var(--f-body);overflow-wrap:anywhere}
+.team .pt{font:700 2.8rem/1 var(--f-display);margin:.1em 0}
+.team .row{gap:6px}.team .btn{padding:4px 12px}
+.rank{max-width:520px;padding:0;list-style:none;margin:16px 0}
+.rank li{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border:1.5px solid var(--ink);margin-bottom:-1.5px;font-weight:600}
+.rank li:first-child{background:var(--ink);color:var(--sheet)}
+
+.lab{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:start}
+@media(max-width:760px){.lab{grid-template-columns:1fr}}
+.lab svg{display:block;width:100%;height:auto;border:1px dashed var(--ink-soft);background:var(--paper)}
+.ctrl{display:grid;gap:14px}
+.ctrl label{display:flex;gap:8px;align-items:center}
+.ctrl input[type=range]{width:100%;accent-color:var(--force)}
+.readout{border:1.5px solid var(--ink);padding:10px 14px;font:500 .9rem/1.45 var(--f-mono);background:var(--paper)}
+.bar{stroke:var(--ink);stroke-width:7;stroke-linecap:round;fill:none}
+.bar.t{stroke:var(--force)} .bar.c{stroke:var(--comp)}
+.joint{fill:var(--sheet);stroke:var(--ink);stroke-width:2.5}
+.ground{stroke:var(--ink);stroke-width:2;fill:none}
+.fa{stroke:var(--force);stroke-width:3.5;fill:none}.fh{fill:var(--force)}
+.body{fill:var(--sheet);stroke:var(--ink);stroke-width:2.4}
+.thin{stroke:var(--ink-soft);stroke-width:1.2;fill:none;stroke-dasharray:5 4}
+.svgtext{font:500 12px var(--f-mono);fill:var(--ink-soft)}
+.beamline{fill:none;stroke:var(--ink)} .beaminner{fill:none;stroke:var(--sheet)}
+
+.fitxa{border:1.5px solid var(--ink);padding:6px 20px 14px;margin:18px 0;max-width:78ch}
+.fitxa h3{margin-top:.9em}
+.fitxa ol,.fitxa ul{padding-left:1.3em}.fitxa li{margin:.35em 0}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{border:1.5px solid var(--ink);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font:500 .76rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase}
+.scroll{overflow-x:auto}
+.chip:disabled{opacity:.45;cursor:not-allowed}
+input[type=range]:disabled{opacity:.4;cursor:not-allowed}
+.lq{border:1.5px solid var(--ink);padding:6px 18px 16px;margin:16px 0;max-width:760px;background:var(--sheet)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:14px 0}
+.card{text-align:left;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);padding:14px 16px;cursor:pointer;border-radius:2px;font:inherit}
+.card:hover{background:var(--paper)}
+.card:focus-visible{outline:3px solid var(--force);outline-offset:2px}
+.card b{display:block;font:600 1.35rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.card span{color:var(--ink-soft);font-size:.92rem}
+.sheet{padding-left:1.4em;margin:14px 0;max-width:72ch}
+.sheet li{margin:0 0 12px;line-height:2}
+.sheet select{margin:0 4px;max-width:100%}
+.mk{font-weight:700;white-space:nowrap;margin-left:6px}
+.mk.ok{color:var(--ok)}.mk.bad{color:var(--bad)}
+.back{margin-bottom:12px}
+textarea{width:100%;font:500 .85rem/1.4 var(--f-mono);color:var(--ink);background:var(--sheet);border:1.5px solid var(--ink);border-radius:2px;padding:8px 10px}
+.code{word-break:break-all;user-select:all}
+.reg{border:1.5px solid var(--ink);padding:4px 18px 16px;margin:22px 0;max-width:640px}
+.reg input[type=text]{min-width:min(100%,280px)}
+.blank{display:inline-block;min-width:7ch;border-bottom:1.5px solid var(--ink)}
+.tag{font:500 .72rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;border:1.5px solid var(--ink);padding:1px 6px;margin-left:6px;vertical-align:middle}
+.dgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:660px;margin:6px 0}
+@media(max-width:560px){.dgrid{grid-template-columns:1fr}}
+.dsheet li{line-height:1.5;margin-bottom:18px}
+.dopt{border:1.5px solid var(--ink);background:var(--sheet);padding:4px;cursor:pointer;border-radius:2px}
+.dopt svg{display:block;width:100%;height:auto}
+.dopt[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:1px}
+.dopt.ok{background:var(--ok-bg);border-color:var(--ok)}
+.dopt.bad{background:var(--bad-bg);border-color:var(--bad)}
+.dopt:disabled{cursor:default}
+.dopt:focus-visible{outline:3px solid var(--force);outline-offset:2px}
+#lab-1,#lab-2{display:flex;flex-direction:column}
+#lab-1[hidden],#lab-2[hidden]{display:none}
+#lab-1 h3,#lab-2 h3{order:-2;margin-top:.4em}
+#c1,#c2{order:-1}
+.steps{list-style:none;padding:0;margin:16px 0;display:grid;gap:10px;max-width:640px}
+.stepbtn{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;width:100%;text-align:left;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);padding:12px 16px;font:inherit;cursor:pointer;border-radius:2px}
+.stepbtn:hover:not(:disabled){background:var(--paper)}
+.stepbtn:disabled{cursor:default}
+.stepbtn .n{font:700 1.8rem/1 var(--f-display);border:1.5px solid currentColor;width:44px;height:44px;display:grid;place-items:center}
+.stepbtn .t b{display:block;font:600 1.2rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.03em}
+.stepbtn .t span{color:var(--ink-soft);font-size:.9rem}
+.stepbtn .s{font:600 .9rem var(--f-mono)}
+.step.done .stepbtn{background:var(--ok-bg);border-color:var(--ok)}
+.step.done .s{color:var(--ok)}
+.step.next .stepbtn{border-width:3px;border-color:var(--force)}
+.step.next .s{color:var(--force)}
+.card em{display:block;font:600 .8rem var(--f-mono);font-style:normal;color:var(--ok);margin-top:6px}
+td input[type=text],td select{width:100%;min-width:84px}
+@media(prefers-reduced-motion:no-preference){.progress span{transition:width .25s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Tecnologia i Digitalització · Unitat d'estructures</p>
+      <h1>Repàs d'estructures i esforços</h1>
+      <p class="lead">Esforços, elements, tipus d'estructures i materials. Activitats individuals que es corregeixen soles. Fes-les per ordre.</p>
+    </div>
+    <dl class="cartutx">
+      <dt>Curs</dt><dd>3r ESO</dd>
+      <dt>Sessió</dt><dd>Repàs</dd>
+      <dt>Lliurament</dt><dd>Un sol codi</dd>
+    </dl>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Seccions">
+    <button class="tab" role="tab" data-tab="individual" aria-controls="p-individual" aria-selected="true">Activitats</button>
+    <button class="tab" role="tab" data-tab="laboratori" aria-controls="p-laboratori" aria-selected="false" hidden>Laboratori</button>
+    <button class="tab" role="tab" data-tab="lliura" aria-controls="p-lliura" aria-selected="false">Lliura · 0/9</button>
+
+  </nav>
+
+  <main>
+    <section class="panel" id="p-individual" role="tabpanel"><div id="ind"></div></section>
+
+    <section class="panel" id="p-laboratori" role="tabpanel" hidden>
+      <h2>Laboratori: pensa la resposta i comprova-ho</h2>
+      <button type="button" class="btn ghost back" id="lab-back">← Activitats</button>
+<p class="note">Cada repte té una pregunta. Respon-la primer. El simulador està bloquejat fins que marques una resposta, i després ja no la pots canviar. Quan acabes tots els reptes, el simulador queda lliure.</p>
+
+      <div id="lab-1">
+<h3>1. Triangula-ho</h3>
+      <div class="lab">
+        <div><svg id="s1" viewBox="0 0 360 280" role="img" aria-label="Marc quadrat de quatre barres unides per les puntes, que es deforma quan l'empenyen"></svg></div>
+        <div class="ctrl">
+          <fieldset><legend>Barra diagonal</legend>
+            <div class="chips" id="l1-diag">
+              <button class="chip" data-v="none" aria-pressed="true">Sense diagonal</button>
+              <button class="chip" data-v="ad" aria-pressed="false">Diagonal ↗</button>
+              <button class="chip" data-v="bc" aria-pressed="false">Diagonal ↖</button>
+            </div></fieldset>
+          <fieldset><legend>Empenta</legend>
+            <div class="chips" id="l1-dir">
+              <button class="chip" data-v="1" aria-pressed="true">Cap a la dreta</button>
+              <button class="chip" data-v="-1" aria-pressed="false">Cap a l'esquerra</button>
+            </div></fieldset>
+          <label for="l1-f">Força <input type="range" id="l1-f" min="0" max="100" value="60"></label>
+          <div class="readout" id="l1-out" role="status"></div>
+        </div>
+      </div>
+      <div id="c1"></div>
+
+      </div>
+<div id="lab-2" hidden>
+<h3>2. Biga plana o de cantell</h3>
+      <div class="lab">
+        <div><svg id="s2" viewBox="0 0 360 300" role="img" aria-label="Dues bigues iguals, una plana i una de cantell, amb el mateix pes a sobre"></svg></div>
+        <div class="ctrl">
+          <label for="l2-f">Pes <input type="range" id="l2-f" min="0" max="100" value="60"></label>
+          <div class="readout" id="l2-out" role="status"></div>
+          <p class="note">Les dues bigues són iguals (40 × 10 mm), del mateix material i amb el mateix pes a sobre. Només canvia com estan posades: una plana i l'altra de cantell, és a dir, sobre el costat estret. El dibuix està exagerat i no és a escala.</p>
+        </div>
+      </div>
+      <div id="c2"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="p-lliura" role="tabpanel" hidden>
+      <h2>Lliura la teva feina</h2>
+      <p class="note">Aquí veus què has fet. El codi inclou <strong>tota</strong> la teva feina, encara que no hagis acabat les activitats. Només compta el primer cop que contestes cada pregunta.</p>
+      <div id="lli-tab" class="scroll"></div>
+      <div class="reg">
+        <h3>Crea el codi</h3>
+        <p class="note">Escriu el teu nom i prem el botó. Copia el codi i dona'l al professor. La feina es guarda en aquest ordinador, però el codi només el pots crear aquí: no te'l descuidis.</p>
+        <div class="row"><label for="lli-name">Nom i cognoms</label><input type="text" id="lli-name" maxlength="40" autocomplete="off"><button type="button" class="btn" id="lli-go">Crea el codi</button></div>
+        <div id="lli-out"></div>
+      </div>
+    </section>
+
+    
+
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+var TEMES={esforcos:"Esforços",elements:"Elements i estructures",materials:"Materials",forces:"Forces"};
+var NIV={1:"Bàsic",2:"Mitjà",3:"Repte"};
+var KEYS="ABCD";
+function chk(s){var h=2166136261;s=s+"|estructures4";for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return ("000"+(h%46656).toString(36)).slice(-3);}
+var TOK_RE=/^([QVROTBDPCF])(\d+)\/(\d+)$/;
+function enc(o){
+  var nm=String(o.n).replace(/\|/g," ").replace(/\s+/g," ").trim();
+  var t=ACT_ORDER.filter(function(k){return k!=="S"&&o.acts[k]&&o.acts[k][1]>0;}).map(function(k){return k+o.acts[k][0]+"/"+o.acts[k][1];});
+  if(o.s)t.push("S"+o.s);
+  var body=[nm,t.join(" "),o.d].join(" | ");
+  return body+" | "+chk(body);
+}
+function dec(c){
+  var a=String(c).replace(/\s+/g," ").trim().split("|").map(function(x){return x.trim();});
+  if(a.length!==4||!a[0]||chk(a.slice(0,3).join(" | "))!==a[3])return null;
+  var acts={},s=null,tk=a[1].split(" "),n=0;
+  for(var i=0;i<tk.length;i++){
+    var m=TOK_RE.exec(tk[i]),q=/^S([0-2-]{5})$/.exec(tk[i]);
+    if(m){acts[m[1]]=[+m[2],+m[3]];n++;}else if(q){s=q[1];n++;}else return null;
+  }
+  if(!n)return null;
+  return {n:a[0],acts:acts,s:s,d:a[2]};
+}
+function saveText(name,text,mime){try{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:mime||"text/plain"}));a.download=name;document.body.appendChild(a);a.click();a.remove();return true;}catch(e){return false;}}
+function copyText(t,cb){try{navigator.clipboard.writeText(t).then(function(){cb(true);},function(){cb(false);});}catch(e){cb(false);}}
+
+/* ---------- Esquemes d'esforços ---------- */
+function arrow(x1,y1,x2,y2){
+  var a=Math.atan2(y2-y1,x2-x1),h=11,w=6.5,bx=x2-h*Math.cos(a),by=y2-h*Math.sin(a),px=-Math.sin(a)*w,py=Math.cos(a)*w;
+  return '<line x1="'+x1+'" y1="'+y1+'" x2="'+bx.toFixed(1)+'" y2="'+by.toFixed(1)+'" class="fa"/><polygon points="'+x2+','+y2+' '+(bx+px).toFixed(1)+','+(by+py).toFixed(1)+' '+(bx-px).toFixed(1)+','+(by-py).toFixed(1)+'" class="fh"/>';
+}
+function curved(cx,cy,rx,ry,a0,a1){
+  var n=18,pts=[],k,t;
+  for(k=0;k<=n;k++){t=(a0+(a1-a0)*k/n)*Math.PI/180;pts.push([cx+rx*Math.cos(t),cy+ry*Math.sin(t)]);}
+  var p=pts[n-1],q=pts[n],a=Math.atan2(q[1]-p[1],q[0]-p[0]),h=12,w=6.5;
+  var bx=q[0]-h*Math.cos(a),by=q[1]-h*Math.sin(a),nx=-Math.sin(a)*w,ny=Math.cos(a)*w;
+  var d=pts.slice(0,n).map(function(z){return z[0].toFixed(1)+','+z[1].toFixed(1);}).join(' ');
+  return '<polyline points="'+d+' '+bx.toFixed(1)+','+by.toFixed(1)+'" class="fa"/><polygon points="'+q[0].toFixed(1)+','+q[1].toFixed(1)+' '+(bx+nx).toFixed(1)+','+(by+ny).toFixed(1)+' '+(bx-nx).toFixed(1)+','+(by-ny).toFixed(1)+'" class="fh"/>';
+}
+function diagram(kind){
+  var s='';
+  if(kind==="traccio"){
+    s='<rect class="body" x="95" y="62" width="130" height="26" rx="2"/>'+arrow(93,75,36,75)+arrow(227,75,284,75);
+  }else if(kind==="compressio"){
+    s='<rect class="body" x="138" y="38" width="44" height="74" rx="2"/>'+arrow(160,4,160,36)+arrow(160,146,160,114)+'<line x1="110" y1="112" x2="210" y2="112" class="thin"/>';
+  }else if(kind==="flexio"){
+    s='<path d="M52 70 Q160 100 268 70" class="beamline" stroke-width="19"/><path d="M52 70 Q160 100 268 70" class="beaminner" stroke-width="14"/>'+
+      '<polygon class="body" points="52,80 39,104 65,104"/><polygon class="body" points="268,80 255,104 281,104"/><line x1="28" y1="104" x2="292" y2="104" class="ground"/>'+arrow(160,8,160,74);
+  }else if(kind==="torsio"){
+    s='<rect class="body" x="72" y="60" width="176" height="30"/><ellipse class="body" cx="72" cy="75" rx="7" ry="15"/><ellipse class="body" cx="248" cy="75" rx="7" ry="15"/>'+
+      curved(72,75,16,40,90,270)+curved(248,75,16,40,-90,90);
+  }else if(kind==="cisallament"){
+    s='<rect class="body" x="40" y="52" width="150" height="22"/><rect class="body" x="130" y="74" width="150" height="22"/><rect class="body" x="153" y="44" width="14" height="60"/>'+
+      '<rect class="body" x="148" y="40" width="24" height="7"/><rect class="body" x="148" y="101" width="24" height="7"/>'+arrow(38,63,6,63)+arrow(282,85,314,85);
+  }
+  return '<svg viewBox="0 0 320 150" role="img" aria-label="Esquema amb fletxes de força">'+s+'</svg>';
+}
+
+/* ---------- Banc de preguntes (la primera opció és la correcta) ---------- */
+var BANK=[];
+function Q(tema,niv,text,opts,why,dg){BANK.push({id:BANK.length,tema:tema,niv:niv,text:text,opts:opts,why:why,dg:dg||null});}
+/* Esforços: esquemes */
+Q("esforcos",1,"Quin esforç representa aquest esquema?",["Tracció","Compressió","Flexió","Torsió"],"Les dues forces estiren la peça cap a fora i l'allarguen. És tracció.","traccio");
+Q("esforcos",1,"Quin esforç representa aquest esquema?",["Compressió","Tracció","Cisallament","Torsió"],"Les forces empenyen la peça cap a dins i la fan més curta. És compressió.","compressio");
+Q("esforcos",2,"Quin esforç representa aquest esquema?",["Flexió","Compressió","Tracció","Cisallament"],"La peça està recolzada pels dos extrems i la força l'empeny pel mig. La peça es corba: és flexió.","flexio");
+Q("esforcos",2,"Quin esforç representa aquest esquema?",["Torsió","Flexió","Cisallament","Tracció"],"Les forces fan girar els dos extrems de la peça en sentits contraris. La peça es torça: és torsió.","torsio");
+Q("esforcos",2,"Quin esforç representa aquest esquema?",["Cisallament","Torsió","Compressió","Flexió"],"Dues forces van en sentits contraris i molt a prop una de l'altra. Fan lliscar una part de la peça sobre l'altra, com si la tallessin. És cisallament (o esforç tallant).","cisallament");
+/* Esforços: situacions */
+Q("esforcos",1,"El cable d'una grua aixeca un bloc de formigó. Quin esforç pateix el cable?",["Tracció","Compressió","Flexió","Torsió"],"El pes del bloc estira el cable, que treballa a tracció.");
+Q("esforcos",1,"Una persona s'asseu en una cadira. Quin esforç pateixen sobretot les potes?",["Compressió","Tracció","Torsió","Cisallament"],"El pes aixafa les potes de dalt a baix: compressió.");
+Q("esforcos",1,"Un prestatge recolzat pels extrems i ple de llibres es corba una mica pel mig. Quin esforç pateix?",["Flexió","Compressió","Tracció","Torsió"],"El pes dels llibres empeny el prestatge cap avall pel mig i el corba: flexió.");
+Q("esforcos",1,"Quan cargoles un cargol, el tornavís pateix sobretot...",["Torsió","Flexió","Tracció","Cisallament"],"Les forces fan girar el tornavís sobre ell mateix: torsió.");
+Q("esforcos",1,"Quan talles un paper amb unes tisores, el paper pateix...",["Cisallament","Torsió","Compressió","Flexió"],"Les dues fulles fan forces contràries molt a prop una de l'altra i el paper se separa: cisallament (esforç tallant).");
+Q("esforcos",2,"Una biga horitzontal sosté el sostre d'una nau. Quin esforç pateix sobretot?",["Flexió","Compressió","Torsió","Cisallament"],"El pes del sostre empeny la biga cap avall pel mig i la corba: flexió.");
+Q("esforcos",2,"La cadena d'un gronxador quan hi ha un nen assegut. Quin esforç pateix?",["Tracció","Compressió","Flexió","Cisallament"],"El pes del nen estira la cadena: tracció.");
+Q("esforcos",2,"Una columna de pedra sosté el sostre d'un temple. Quin esforç pateix sobretot?",["Compressió","Tracció","Torsió","Flexió"],"El pes del sostre l'aixafa de dalt a baix: compressió.");
+Q("esforcos",2,"Gires la clau dins del pany per obrir la porta. Quin esforç pateix la clau?",["Torsió","Cisallament","Compressió","Tracció"],"La clau gira sobre ella mateixa: torsió.");
+Q("esforcos",2,"Un cargol uneix dues planxes de metall que volen lliscar una sobre l'altra. Quin esforç pateix el cargol?",["Cisallament","Tracció","Flexió","Compressió"],"Les forces contràries volen tallar el cargol pel mig: cisallament (esforç tallant).");
+Q("esforcos",3,"Dues persones s'asseuen al mig d'un banc de fusta amb quatre potes. Quin esforç pateix sobretot el seient i quin les potes?",["Seient: flexió. Potes: compressió","Seient: tracció. Potes: tracció","Seient: compressió. Potes: flexió","Seient: torsió. Potes: cisallament"],"El seient rep el pes pel mig i es corba (flexió). Les potes reben el pes de dalt a baix i s'aixafen (compressió).");
+Q("esforcos",3,"En un pont penjant, quin esforç pateixen els cables i quin les torres?",["Cables: tracció. Torres: compressió","Cables: compressió. Torres: tracció","Cables: flexió. Torres: torsió","Cables: cisallament. Torres: flexió"],"El pes del tauler (la part per on passen els cotxes) estira els cables (tracció). Les torres reben aquest pes de dalt a baix i s'aixafen (compressió).");
+Q("esforcos",3,"Una regla de plàstic recolzada pels extrems es doblega menys si la poses de cantell (sobre el costat estret) que si la poses plana. Per què?",["Perquè la regla és més alta (de dalt a baix) i aguanta millor la flexió","Perquè de cantell pesa menys","Perquè de cantell és de material diferent","Perquè de cantell la força és més petita"],"La regla és la mateixa, però de cantell és més alta (de dalt a baix) i es corba molt menys. Per això les bigues dels sostres es posen de cantell.");
+Q("esforcos",3,"Quin d'aquests elements treballa sobretot a tracció?",["El cable que subjecta un pal d'antena","La pota d'una taula","Un prestatge carregat","Una fulla de les tisores"],"El cable que subjecta el pal s'estira. La pota treballa a compressió, el prestatge a flexió i la fulla de les tisores a cisallament.");
+/* Elements i estructures */
+Q("elements",1,"Quin element estructural és sota l'edifici i reparteix el seu pes sobre el terreny?",["Els fonaments","La biga","El tirant","El pilar"],"Els fonaments passen al terreny el pes de l'estructura i el reparteixen.");
+Q("elements",1,"Com es diu l'element horitzontal que aguanta el pes d'un sostre i el passa als pilars?",["Biga","Pilar","Tirant","Fonament"],"La biga és l'element horitzontal que aguanta el pes i el passa als pilars. Treballa sobretot a flexió.");
+Q("elements",1,"Com es diu l'element vertical que sosté les bigues i passa el pes cap avall?",["Pilar (o columna)","Biga","Cable","Fonaments"],"El pilar o columna és l'element vertical i treballa sobretot a compressió.");
+Q("elements",1,"Per què hi ha triangles a les grues, a les torres elèctriques i als ponts de metall?",["Perquè el triangle no es deforma","Perquè són més bonics","Perquè així pesen més i són més estables","Perquè el triangle és més fàcil de pintar"],"Un triangle no es pot deformar si els seus costats no canvien de llargada. Per això, posar-hi triangles fa l'estructura rígida (no es deforma).");
+Q("elements",2,"Un marc quadrat fet amb barres es deforma i s'inclina quan l'empenyem de costat. Com ho arreglem?",["Afegint-hi una barra diagonal","Fent les barres més llargues","Fent les barres més primes","Treient-ne una barra"],"La diagonal forma dos triangles i el marc ja no es deforma. Això és triangular l'estructura.");
+Q("elements",1,"Les piràmides d'Egipte són un exemple d'estructura...",["massiva","entramada","penjant","laminar"],"Les estructures massives aguanten pel seu propi pes i per la gran quantitat de material.");
+Q("elements",1,"Un edifici de pisos amb pilars i bigues de formigó és una estructura...",["entramada","massiva","penjant","laminar"],"Les estructures entramades estan fetes de pilars i bigues units entre si.");
+Q("elements",1,"Un pont penjant com el Golden Gate és una estructura...",["penjant","massiva","entramada","laminar"],"En les estructures penjants, la part per on passen els cotxes (el tauler) penja de cables que treballen a tracció.");
+Q("elements",2,"La torre Eiffel o una torre d'alta tensió són estructures...",["triangulades (fetes de triangles)","massives","laminars","penjants"],"Estan fetes de barres que formen triangles, i els triangles no es deformen.");
+Q("elements",2,"La closca d'un ou, un casc o la carrosseria d'un cotxe són estructures...",["laminars (làmines fines)","massives","entramades","penjants"],"Les estructures laminars són làmines fines que aguanten gràcies a la seva forma.");
+Q("elements",2,"En un arc de pedra, les pedres treballen sobretot a...",["compressió","tracció","torsió","flexió"],"En un arc, les pedres s'empenyen les unes a les altres i queden apretades: compressió. La pedra aguanta molt bé la compressió, per això va bé per fer arcs.");
+Q("elements",1,"Quina NO és una funció d'una estructura?",["Produir energia","Aguantar càrregues","Mantenir la forma de l'objecte","Passar les forces cap al terra"],"Una estructura aguanta càrregues, manté la forma i passa les forces cap al terra. No produeix energia.");
+Q("elements",2,"Una estructura ha de ser resistent, rígida i estable. Què vol dir estable?",["Que no bolca","Que no es trenca","Que no es deforma gaire","Que pesa poc"],"Resistent és que no es trenca. Rígida és que no es deforma gaire. Estable és que no bolca.");
+Q("elements",2,"Quina torre serà més difícil de bolcar?",["La de base ampla i el pes a prop del terra","La de base estreta i molt alta","La que té el pes a la part de dalt","Totes igual: l'altura no importa"],"Una base ampla i un centre de gravetat baix (el pes a prop del terra) fan l'estructura més estable.");
+/* Materials */
+Q("materials",1,"Estires una goma elàstica i, quan la deixes anar, torna a la seva forma. Quina propietat és?",["Elasticitat","Plasticitat","Duresa","Fragilitat"],"L'elasticitat és la capacitat de recuperar la forma quan la força s'acaba.");
+Q("materials",1,"Una peça de plastilina queda deformada després d'apretar-la i no recupera la forma. Quina propietat és?",["Plasticitat","Elasticitat","Duresa","Tenacitat"],"La plasticitat és quan el material es queda deformat després de treure la força.");
+Q("materials",1,"Un got de vidre cau a terra i es trenca en trossos sense haver-se deformat abans. Aquest material és...",["fràgil","tenaç","elàstic","plàstic"],"Un material fràgil es trenca sense deformar-se gaire.");
+Q("materials",1,"Un material que gairebé no es deixa ratllar, com el diamant, té molta...",["duresa","elasticitat","plasticitat","fragilitat"],"La duresa és la resistència d'un material a deixar-se ratllar.");
+Q("materials",2,"Un casc de ciclista ha d'aguantar cops sense trencar-se. Quina propietat necessita sobretot?",["Tenacitat","Fragilitat","Duresa","Elasticitat"],"La tenacitat és la capacitat d'aguantar cops sense trencar-se.");
+Q("materials",2,"Quin material és més rígid: una barra d'acer o una de goma de la mateixa mida?",["L'acer: es deforma molt menys amb la mateixa força","La goma: es deforma més i per tant aguanta més","Totes dues igual","Depèn només del color"],"La rigidesa és la resistència a deformar-se. L'acer es deforma molt menys que la goma amb la mateixa força.");
+Q("materials",3,"Per què es posen barres d'acer dins del formigó d'una biga?",["El formigó aguanta bé la compressió però malament la tracció, i l'acer aguanta bé la tracció","Perquè l'acer és més lleuger que el formigó","Només per decorar","Perquè així el formigó s'asseca més de pressa"],"En una biga, una part s'estira (tracció). El formigó aguanta poc la tracció, però les barres d'acer l'aguanten bé. Això és el formigó armat.");
+/* Forces */
+Q("forces",1,"En quina unitat es mesuren les forces?",["Newton (N)","Quilogram (kg)","Pascal (Pa)","Metre (m)"],"La força es mesura en newtons. El quilogram és una unitat de massa.");
+Q("forces",1,"Què cal saber per descriure bé una força?",["Intensitat (quant val), direcció, sentit i punt d'aplicació","Només la intensitat","Només la direcció i el sentit","Intensitat i durada"],"Per descriure una força cal dir quant val (intensitat), la direcció, el sentit i el punt on s'aplica.");
+Q("forces",2,"Quin és el pes d'una caixa de 10 kg? (g = 9,8 N/kg)",["98 N","10 N","9,8 N","980 N"],"P = m · g = 10 · 9,8 = 98 N.");
+Q("forces",2,"Dues forces iguals empenyen un objecte en sentits contraris, sobre la mateixa línia. Quant val la suma de les dues?",["Zero: l'objecte està en equilibri","El doble d'una de les forces","Una força més gran cap a un costat","No es pot saber"],"Es compensen. La suma és zero i l'objecte no es mou (està en equilibri).");
+
+/* Vertader o fals */
+var VF=[];
+function V(tema,text,ans,why){VF.push({id:"v"+VF.length,tema:tema,niv:0,text:text,vf:true,ans:ans,why:why});}
+V("esforcos","La tracció allarga la peça.",true,"Les forces estiren la peça cap a fora i l'allarguen.");
+V("esforcos","Una pota de taula amb pes a sobre treballa sobretot a tracció.",false,"Les potes reben el pes de dalt a baix i s'aixafen: compressió.");
+V("esforcos","En la flexió, la força empeny la peça de través i la corba.",true,"Una biga recolzada pels extrems i amb pes al mig treballa així.");
+V("esforcos","La torsió fa girar la peça sobre ella mateixa.",true,"Les forces giren els dos extrems de la peça en sentits contraris.");
+V("esforcos","Quan tallem paper amb unes tisores, el paper pateix compressió.",false,"Les fulles fan forces contràries molt a prop una de l'altra: cisallament.");
+V("esforcos","Un cable que té un pes penjat pateix compressió.",false,"El pes estira el cable: tracció.");
+V("esforcos","Una biga recolzada pels extrems i amb pes al mig treballa sobretot a flexió.",true,"El pes la corba: flexió.");
+V("elements","Els fonaments reparteixen el pes de l'estructura sobre el terreny.",true,"Aquesta és la seva funció: passar el pes al terreny.");
+V("elements","El triangle és una figura que es deforma fàcilment.",false,"El triangle no es deforma. Per això posem triangles a les estructures.");
+V("elements","Un pilar és un element horitzontal.",false,"El pilar és vertical. L'element horitzontal és la biga.");
+V("elements","La torre Eiffel és una estructura triangulada.",true,"Està feta de barres que formen triangles.");
+V("elements","En un pont penjant, els cables que aguanten el tauler (la part per on passen els cotxes) treballen a compressió.",false,"El pes del tauler estira els cables: tracció.");
+V("elements","Una estructura estable és la que no bolca fàcilment.",true,"Resistent: no es trenca. Rígida: no es deforma gaire. Estable: no bolca.");
+V("elements","Com més ampla és la base i més a prop del terra està el pes (centre de gravetat baix), més estable és una estructura.",true,"Amb la base ampla i el pes a prop del terra, és més difícil que bolqui.");
+V("materials","Un material elàstic recupera la forma quan deixa d'actuar la força.",true,"L'elasticitat és la capacitat de recuperar la forma.");
+V("materials","El vidre és un material molt tenaç.",false,"El vidre és fràgil: es trenca amb els cops sense deformar-se gaire.");
+V("materials","La duresa és la resistència d'un material a deixar-se ratllar.",true,"Per això el diamant, que no es ratlla, és molt dur.");
+V("materials","La plasticitat és la capacitat de recuperar la forma original.",false,"Això és l'elasticitat. La plasticitat és quedar-se deformat.");
+V("materials","L'acer és més rígid que la goma.",true,"Amb la mateixa força, l'acer es deforma molt menys que la goma.");
+V("forces","La força es mesura en quilograms.",false,"La força es mesura en newtons. El quilogram és una unitat de massa.");
+V("forces","El pes d'un objecte de 5 kg és 49 N (g = 9,8 N/kg).",true,"P = m · g = 5 · 9,8 = 49 N.");
+V("forces","Dues forces iguals i contràries sobre la mateixa línia, aplicades a un objecte, es compensen.",true,"La suma és zero i l'objecte està en equilibri.");
+V("forces","Per saber com és una força només cal saber quant val.",false,"També cal la direcció, el sentit i el punt d'aplicació.");
+
+/* Relaciona */
+var RSETS={
+ esf:{label:"Situacions i esforços",tema:"esforcos",title:"Tria l'esforç principal que pateix cada element.",
+  bank:["Tracció","Compressió","Flexió","Torsió","Cisallament"],
+  rows:[["El cable d'una grua que aixeca un contenidor","Tracció"],["La pota d'un banc quan algú s'hi asseu","Compressió"],["Un trampolí quan algú hi salta","Flexió"],["La broca d'un trepant mentre fa un forat","Torsió"],["La guillotina que talla paper","Cisallament"],["La corda d'un joc d'estirar la corda","Tracció"],["El pilar d'un pont","Compressió"],["La clau de contacte quan arrenques un cotxe","Torsió"],["Un prestatge ple de llibres","Flexió"],["El cargol que uneix dues planxes que volen lliscar","Cisallament"],["La cadena d'un gronxador","Tracció"],["Una biga que aguanta el sostre","Flexió"]]},
+ elem:{label:"Elements estructurals",tema:"elements",title:"Tria l'element estructural de cada descripció.",
+  bank:["Fonaments","Biga","Pilar","Tirant","Arc","Triangulació"],
+  rows:[["Reparteix el pes de l'edifici sobre el terreny","Fonaments"],["Element horitzontal que aguanta el sostre i passa el pes als pilars","Biga"],["Element vertical que sosté les bigues i treballa a compressió","Pilar"],["Cable o barra que subjecta una peça i treballa a tracció","Tirant"],["Forma corba de pedra que creua un espai buit i treballa a compressió","Arc"],["Barres col·locades formant triangles perquè l'estructura no es deformi","Triangulació"]]},
+ tipus:{label:"Tipus d'estructures",tema:"elements",title:"Tria el tipus d'estructura de cada exemple.",
+  bank:["Massiva","Entramada","Triangulada","Penjant","Laminar"],
+  rows:[["Les piràmides d'Egipte","Massiva"],["Una presa de formigó (mur que atura l'aigua d'un riu)","Massiva"],["Una casa de pilars i bigues de formigó","Entramada"],["Un edifici de pisos amb pilars i bigues","Entramada"],["La torre Eiffel","Triangulada"],["Una torre d'alta tensió","Triangulada"],["El pont penjant del Golden Gate","Penjant"],["La closca d'un ou","Laminar"],["La carrosseria d'un cotxe","Laminar"],["Un casc de ciclista","Laminar"]]},
+ mat:{label:"Propietats dels materials",tema:"materials",title:"Tria la propietat que descriu cada cas.",
+  bank:["Elasticitat","Plasticitat","Duresa","Fragilitat","Tenacitat","Rigidesa"],
+  rows:[["Una goma elàstica recupera la forma quan la deixes anar","Elasticitat"],["Una molla torna a la seva llargada quan deixes d'estirar-la","Elasticitat"],["La plastilina queda deformada després d'apretar-la","Plasticitat"],["El diamant no es deixa ratllar","Duresa"],["Un got de vidre es trenca sense deformar-se abans","Fragilitat"],["Un tros de guix es trenca als cops sense deformar-se","Fragilitat"],["Un casc aguanta cops sense trencar-se","Tenacitat"],["Una barra d'acer es deforma molt poc amb la força","Rigidesa"]]}
+};
+/* Omple els buits: [tema, abans, correcta, després, distractors] */
+var OM=[
+ ["elements","Una estructura ha de ser resistent (no es trenca), rígida (no es deforma gaire) i","estable","(no bolca).",["lleugera","flexible","elàstica"]],
+ ["elements","Els fonaments passen el pes de l'edifici al","terreny",".",["sostre","pilar","cable"]],
+ ["elements","Perquè una estructura no es deformi, cal","triangular-la",", és a dir, fer-hi triangles.",["pintar-la","allargar-la","pesar-la"]],
+ ["esforcos","Una biga treballa sobretot a","flexió",".",["tracció","torsió","cisallament"]],
+ ["esforcos","Un tirant treballa a","tracció",".",["compressió","flexió","torsió"]],
+ ["esforcos","Un pilar treballa sobretot a","compressió",".",["tracció","flexió","cisallament"]],
+ ["esforcos","Quan unes forces fan girar una peça sobre ella mateixa, la peça pateix","torsió",".",["flexió","tracció","compressió"]],
+ ["esforcos","Quan dues forces contràries, molt a prop una de l'altra, volen tallar una peça, hi ha","cisallament",".",["compressió","torsió","flexió"]],
+ ["forces","La força es mesura en","newtons",".",["quilograms","metres","pascals"]],
+ ["forces","El pes és la força amb què la Terra","atrau","els objectes.",["allunya","escalfa","gira"]],
+ ["materials","Un material que recupera la forma quan deixa d'actuar la força és","elàstic",".",["fràgil","plàstic","dur"]],
+ ["materials","Un material que es trenca sense deformar-se gaire és","fràgil",".",["elàstic","tenaç","plàstic"]],
+ ["materials","Un material que gairebé no es deixa ratllar té molta","duresa",".",["elasticitat","plasticitat","fragilitat"]],
+ ["elements","Un pont penjant és una estructura","penjant",", perquè el tauler (per on passen els cotxes) penja de cables.",["massiva","laminar","entramada"]],
+ ["elements","Una torre és més estable si té la base ampla i el centre de gravetat (el pes) molt","baix",".",["alt","lluny","petit"]],
+ ["esforcos","L'esforç que allarga una peça és la","tracció",".",["compressió","flexió","torsió"]],
+ ["materials","El formigó aguanta bé la compressió, però malament la","tracció",".",["duresa","humitat","gravetat"]],
+ ["forces","Dues forces iguals i contràries, sobre la mateixa línia, se sumen i donen","zero","; l'objecte està en equilibri.",["el doble","una força més gran","un newton"]]
+];
+
+function poolOf(src,temes,niv){return src.filter(function(q){return temes.indexOf(q.tema)>=0&&(!niv||q.niv===niv);});}
+function prep(q){
+  if(q.vf)return {q:q,opts:[{t:"Vertader",ok:q.ans},{t:"Fals",ok:!q.ans}]};
+  return {q:q,opts:shuffle(q.opts.slice(0,3).map(function(t,i){return {t:t,ok:i===0};}))};
+}
+
+/* ---------- Progrés i puntuació (primer intent de cada pregunta) ---------- */
+var ACT_ORDER=["Q","V","R","O","D","T","B","C","F"];
+var ACTN={Q:"Qüestionari",V:"Vertader o fals",R:"Relaciona",O:"Omple els buits",D:"Dibuixa les forces",T:"Laboratori 1: Triangula-ho",B:"Laboratori 2: la biga",C:"Caça d'esforços",F:"Repte del pont de paper"};
+var ACTD={Q:"8 preguntes",V:"8 frases",R:"6 casos",O:"6 frases",D:"5 dibuixos",T:"3 preguntes i un simulador",B:"3 preguntes i un simulador",C:"Busca 3 objectes de l'aula",F:"Amb un full de paper"};
+var prog={};
+ACT_ORDER.forEach(function(k){prog[k]={ok:0,seen:0,first:{},done:false};});
+function rec(a,key,ok){var p=prog[a];if(Object.prototype.hasOwnProperty.call(p.first,key))return;p.first[key]=!!ok;p.seen++;if(ok)p.ok++;updTab();save();}
+function fin(a){prog[a].done=true;updTab();save();}
+function doneN(){return ACT_ORDER.filter(function(k){return prog[k].done;}).length;}
+function updTab(){var t=$('.tab[data-tab="lliura"]');if(t)t.textContent="Lliura · "+doneN()+"/"+ACT_ORDER.length;}
+function doneNote(){return '<p class="note"><strong>Resultat guardat.</strong> Continua amb la següent activitat.</p>';}
+function num(v){var x=parseFloat(String(v).replace(",","."));return isNaN(x)?null:x;}
+function optsHtml(list,val){return '<option value="">—</option>'+list.map(function(x){var v=Array.isArray(x)?x[0]:x,l=Array.isArray(x)?x[1]:x;return '<option value="'+esc(v)+'"'+(String(val)===String(v)?' selected':'')+'>'+esc(l)+'</option>';}).join("");}
+function byTema(list){var by={};list.forEach(function(x){by[x.tema]=by[x.tema]||{ok:0,n:0};by[x.tema].n++;if(x.ok)by[x.tema].ok++;});return by;}
+function barsHtml(by){return '<div class="bars">'+Object.keys(by).map(function(t){var b=by[t];return '<div class="bar-row"><span>'+TEMES[t]+'</span><span class="track"><span class="fill" style="width:'+(b.ok/b.n*100)+'%"></span></span><b>'+b.ok+'/'+b.n+'</b></div>';}).join("")+'</div>';}
+function nowStr(){var t=new Date(),z=function(n){return (n<10?"0":"")+n;};return z(t.getDate())+"/"+z(t.getMonth()+1)+" "+z(t.getHours())+":"+z(t.getMinutes());}
+
+/* ---------- Conjunts fixos (cap decisió per a l'alumne) ---------- */
+var QSET=[0,1,2,3,4,19,22,33];          /* 5 esquemes + fonaments + triangles + elasticitat */
+var VSET=[0,1,4,6,8,10,14,19];
+var RSEL=[0,1,2,3,4,5];                  /* RSETS.esf: els cinc esforços */
+var OSEL=[1,3,4,5,6,10];
+var ESF=[["traccio","Tracció"],["compressio","Compressió"],["flexio","Flexió"],["torsio","Torsió"],["cisallament","Cisallament"]];
+var ESFN=ESF.map(function(e){return e[1];});
+function freshForm(){return {
+  C:[0,1,2].map(function(){return {o:"",e:""};}),Cmsg:"",
+  F:{rows:[{p:"",r:""},{p:"",r:""}],best:"",esf:"",checked:false,msg:"",res:null}
+};}
+var FORM=freshForm();
+/* ---------- Desa la feina al navegador (per continuar un altre dia) ---------- */
+var SKEY="repas-estructures-v1",saved=null,lastName="";
+function save(){try{localStorage.setItem(SKEY,JSON.stringify({p:prog,f:FORM,n:lastName}));}catch(e){}}
+function restore(){
+  try{
+    var j=localStorage.getItem(SKEY);if(!j)return;var o=JSON.parse(j);
+    ACT_ORDER.forEach(function(k){var x=o.p&&o.p[k];if(x)prog[k]={ok:+x.ok||0,seen:+x.seen||0,first:x.first||{},done:!!x.done};});
+    if(o.f){
+      if(Array.isArray(o.f.C)&&o.f.C.length===3)FORM.C=o.f.C.map(function(r){return {o:String(r.o||""),e:String(r.e||"")};});
+      FORM.Cmsg=String(o.f.Cmsg||"");
+      if(o.f.F&&Array.isArray(o.f.F.rows)&&o.f.F.rows.length===2)FORM.F=o.f.F;
+    }
+    if(ACT_ORDER.some(function(k){return prog[k].seen>0;}))saved={name:String(o.n||""),ask:false,keep:false};
+  }catch(e){}
+}
+function wipeAll(){
+  try{localStorage.removeItem(SKEY);}catch(e){}
+  ACT_ORDER.forEach(function(k){prog[k]={ok:0,seen:0,first:{},done:false};});
+  FORM=freshForm();ind.act=null;ind.run=null;ind.sheet=null;ind.dr=null;saved=null;lastName="";
+  var nm=$("#lli-name");if(nm)nm.value="";var o=$("#lli-out");if(o)o.innerHTML="";
+  labReset(1);labReset(2);updTab();
+}
+function setF(path,v){var p=path.split("."),o=FORM;for(var i=0;i<p.length-1;i++)o=o[p[i]];o[p[p.length-1]]=v;}
+
+var ind={act:null,run:null,sheet:null,dr:null};
+function startAct(k){
+  ind.act=k;ind.run=null;ind.sheet=null;
+  if(k==="Q")ind.run={items:shuffle(QSET.map(function(i){return BANK[i];})).map(prep),i:0,picked:null,res:[],done:false};
+  else if(k==="V")ind.run={items:shuffle(VSET.map(function(i){return VF[i];})).map(prep),i:0,picked:null,res:[],done:false};
+  else if(k==="R"){
+    var st=RSETS.esf;
+    ind.sheet={title:"Tria l'esforç principal que pateix cada element.",items:shuffle(RSEL.map(function(i){return st.rows[i];})).map(function(r){var bank=shuffle(st.bank);return {id:"r:"+r[0],tema:"esforcos",pre:r[0],post:"",opts:bank,ai:bank.indexOf(r[1])};}),checked:false};
+  }else if(k==="O"){
+    ind.sheet={title:"Tria la paraula que falta a cada frase.",items:shuffle(OSEL.map(function(i){return [OM[i],i];})).map(function(x){var o=x[0],op=shuffle([o[2]].concat(o[4].slice(0,2)));return {id:"o"+x[1],tema:o[0],pre:o[1],post:o[3],opts:op,ai:op.indexOf(o[2])};}),checked:false};
+  }else if(k==="D"){startD();}
+}
+function startD(){
+  ind.dr={checked:false,msg:"",items:shuffle(ESF).map(function(e){
+    var others=shuffle(ESF.map(function(x){return x[0];}).filter(function(x){return x!==e[0];})).slice(0,2);
+    return {k:e[0],name:e[1],opts:shuffle([e[0]].concat(others)),sel:null,ok:null};
+  })};
+}
+function renderD(){
+  var d=ind.dr,h='<h2>Dibuixa les forces</h2><p class="note">Per a cada esforç, tria el dibuix correcte. Les fletxes taronja són les forces.</p><ol class="sheet dsheet">';
+  d.items.forEach(function(it,i){
+    h+='<li><b>'+esc(it.name)+'</b><div class="dgrid">'+it.opts.map(function(k,j){
+      var cls="";if(d.checked){if(k===it.k)cls=" ok";else if(it.sel===j)cls=" bad";}
+      return '<button type="button" class="dopt'+cls+'" data-a="dpick" data-i="'+i+'" data-j="'+j+'" aria-pressed="'+(it.sel===j)+'" aria-label="Dibuix '+(j+1)+'"'+(d.checked?' disabled':'')+'>'+diagram(k)+'</button>';
+    }).join("")+'</div>'+(d.checked?(it.ok?'<span class="mk ok">✓ Correcte</span>':'<span class="mk bad">✕ El correcte és el verd</span>'):'')+'</li>';
+  });
+  h+='</ol>';
+  if(!d.checked){h+='<p class="note" role="status">'+esc(d.msg||"")+'</p><button type="button" class="btn" data-a="dcheck">Comprova</button>';}
+  else{var ok=d.items.filter(function(x){return x.ok;}).length;h+='<h2>Resultat</h2><div class="score">'+ok+'/'+d.items.length+'</div>'+doneNote()+'<button type="button" class="btn" data-a="menu">Continua</button>';}
+  return h;
+}
+function renderC(){
+  var h='<h2>Caça d\'esforços</h2><p class="note">Busca tres objectes de l\'aula o del taller. Escriu què és l\'objecte i tria quin esforç pateix. Han de ser almenys dos esforços diferents.</p><div class="scroll"><table><tr><th>#</th><th>Objecte</th><th>Esforç</th></tr>';
+  FORM.C.forEach(function(r,i){
+    h+='<tr><td>'+(i+1)+'</td><td><input type="text" data-f="C.'+i+'.o" value="'+esc(r.o)+'" maxlength="40" aria-label="Objecte '+(i+1)+'"></td><td><select data-f="C.'+i+'.e" aria-label="Esforç '+(i+1)+'">'+optsHtml(ESFN,r.e)+'</select></td></tr>';
+  });
+  h+='</table></div><p class="note" role="status">'+esc(FORM.Cmsg)+'</p><div class="row"><button type="button" class="btn" data-a="ccheck">Comprova</button>'+'<button type="button" class="btn ghost" data-a="menu">'+(prog.C.done?'Continua':'Torna a les activitats')+'</button></div>';
+  return h;
+}
+function checkC(){
+  var n=0,st=0,ds={};
+  FORM.C.forEach(function(r){
+    if(r.o.trim()||r.e)st++;
+    if(r.o.trim().length>=3&&r.e){n++;ds[r.e]=1;}
+  });
+  var k=Object.keys(ds).length,sc=k>=2?n:Math.min(n,2);
+  prog.C.ok=sc;prog.C.seen=st;
+  var m="Objectes completats: "+n+" de 3. Esforços diferents: "+k+".";
+  if(n<3)m+=" Completa els que falten.";
+  if(n>0&&k<2)m+=" Necessites almenys dos esforços diferents.";
+  if(n===3&&k>=2)m+=" Molt bé.";
+  FORM.Cmsg=m;if(n===3&&k>=2)fin("C");else{updTab();save();}
+}
+function isNum(x){return /^\d{1,3}$/.test(String(x).trim());}
+function renderF(){
+  var f=FORM.F,dis=f.checked?' disabled':'',r=f.res;
+  function mk(o,bad){if(!r)return "";return o?' <span class="mk ok">✓</span>':' <span class="mk bad">✕ '+esc(bad)+'</span>';}
+  var h='<h2>Repte del pont de paper</h2><p class="note"><strong>Necessites:</strong> 2 fulls A4, dos llibres o estoigs i monedes o gomes d\'esborrar. Separa els llibres uns 15 cm. Fes dos ponts amb un full cadascun, sense cola ni cinta: un <strong>full pla</strong> i un <strong>full plegat</strong> com tu vulguis. Posa els objectes al mig, d\'un en un.</p>'+
+   '<p class="note">Escriu quants objectes creus que aguantarà cada pont. Prova-ho. Escriu quants n\'ha aguantat.</p><div class="scroll"><table><tr><th>Pont</th><th>Quants creus que aguantarà?</th><th>Quants ha aguantat?</th></tr>';
+  ["Full pla","Full plegat"].forEach(function(nm,i){
+    h+='<tr><td>'+nm+'</td><td><input type="text" inputmode="numeric" size="4" maxlength="3" data-f="F.rows.'+i+'.p" value="'+esc(f.rows[i].p)+'"'+dis+' aria-label="Predicció '+nm+'"></td><td><input type="text" inputmode="numeric" size="4" maxlength="3" data-f="F.rows.'+i+'.r" value="'+esc(f.rows[i].r)+'"'+dis+' aria-label="Resultat '+nm+'"></td></tr>';
+  });
+  h+='</table></div><ol class="sheet"><li>Quin pont ha aguantat més objectes? <select data-f="F.best"'+dis+' aria-label="Pont que aguanta més">'+optsHtml([["0","Full pla"],["1","Full plegat"]],f.best)+'</select>'+(r?mk(r.b,"Ha aguantat més: "+r.name):"")+'</li>'+
+   '<li>Quin esforç pateix el pont? <select data-f="F.esf"'+dis+' aria-label="Esforç del pont">'+optsHtml(["Tracció","Flexió","Torsió"],f.esf)+'</select>'+(r?mk(r.e,"És flexió"):"")+'</li></ol>';
+  if(!f.checked){h+='<p class="note" role="status">'+esc(f.msg||"")+'</p><button type="button" class="btn" data-a="fcheck">Comprova</button>';}
+  else{h+='<h2>Resultat</h2><div class="score">'+(1+(r.b?1:0)+(r.e?1:0))+'/3</div>'+doneNote()+'<button type="button" class="btn" data-a="menu">Continua</button>';}
+  return h;
+}
+function checkF(){
+  var f=FORM.F,rows=f.rows;
+  if(!rows.every(function(x){return isNum(x.p)&&isNum(x.r);})){f.msg="Omple la taula: només números.";return;}
+  if(f.best===""||!f.esf){f.msg="Contesta les dues preguntes.";return;}
+  var vals=rows.map(function(x){return +x.r;}),mx=Math.max(vals[0],vals[1]);
+  f.res={b:vals[+f.best]===mx,e:f.esf==="Flexió",name:vals[0]>vals[1]?"el full pla":"el full plegat"};
+  rec("F","t",true);rec("F","b",f.res.b);rec("F","e",f.res.e);
+  f.checked=true;f.msg="";fin("F");
+}
+
+/* ---------- Pantalles ---------- */
+function renderInd(){
+  var root=$("#ind"),r=ind.run,sh=ind.sheet,h="";
+  if(!ind.act){
+    var next=ACT_ORDER.filter(function(k){return !prog[k].done;})[0];
+    if(saved&&!saved.keep){
+      h+='<div class="why" role="status"><strong>Hi ha feina guardada en aquest ordinador'+(saved.name?' ('+esc(saved.name)+')':'')+'.</strong> '+(saved.ask?'Segur que vols esborrar-la? No es pot recuperar.':'És la teva?')+'<div class="row" style="margin-top:8px">'+
+        (saved.ask?'<button type="button" class="btn" data-a="wipe">Sí, esborra-la</button><button type="button" class="btn ghost" data-a="noask">No</button>':'<button type="button" class="btn" data-a="keep">Sí, continua</button><button type="button" class="btn ghost" data-a="ask">No, sóc un altre alumne</button>')+'</div></div>';
+    }
+    h+='<h2>Les teves activitats</h2><p class="note">Fes-les per ordre, una darrere l\'altra. Quan el professor ho digui, ves a la pestanya <strong>Lliura</strong>, encara que no hagis acabat: compta tot el que has fet. La feina es guarda en aquest ordinador.</p><ol class="steps">'+
+      ACT_ORDER.map(function(k,i){
+        var p=prog[k],isLab=(k==="T"||k==="B"),cls=p.done?"done":(k===next?"next":"");
+        return '<li class="step '+cls+'"><button type="button" class="stepbtn" data-a="act" data-v="'+k+'"'+(p.done&&!isLab&&k!=="C"?' disabled':'')+'><span class="n">'+(i+1)+'</span><span class="t"><b>'+ACTN[k]+'</b><span>'+ACTD[k]+'</span></span><span class="s">'+(p.done?'✓ Fet':(k===next?'Comença':''))+'</span></button></li>';
+      }).join("")+'</ol>';
+  }else if(ind.act==="D"){h=renderD();}
+  else if(ind.act==="C"){h=renderC();}
+  else if(ind.act==="F"){h=renderF();}
+  else if(sh){
+    h='<div class="q-head"><span>'+esc(ACTN[ind.act])+'</span><span>'+sh.items.length+' preguntes</span></div><div class="progress"><span style="width:'+(sh.checked?100:0)+'%"></span></div><h2 class="q-text">'+esc(sh.title)+'</h2><ol class="sheet">'+
+      sh.items.map(function(it,i){
+        var sel='<select id="sh-'+i+'" aria-label="Resposta '+(i+1)+'"'+(sh.checked?' disabled':'')+'><option value="">—</option>'+it.opts.map(function(o,k){return '<option value="'+k+'"'+(sh.checked&&it.sel===k?' selected':'')+'>'+esc(o)+'</option>';}).join("")+'</select>';
+        var fb=sh.checked?(it.ok?'<span class="mk ok">✓</span>':'<span class="mk bad">✕ Correcta: '+esc(it.opts[it.ai])+'</span>'):'';
+        return '<li>'+esc(it.pre)+' '+sel+' '+esc(it.post)+fb+'</li>';
+      }).join("")+'</ol>';
+    if(!sh.checked){h+='<p class="note" id="sh-msg" role="status"></p><button type="button" class="btn" data-a="check">Comprova</button>';}
+    else{var ok=sh.items.filter(function(x){return x.ok;}).length;h+='<h2>Resultat</h2><div class="score">'+ok+'/'+sh.items.length+'</div>'+doneNote()+'<button type="button" class="btn" data-a="menu">Continua</button>';}
+  }else if(r&&!r.done){
+    var it=r.items[r.i],q=it.q,N=r.items.length,p=r.picked,last=r.i===N-1;
+    h='<div class="q-head"><span>Pregunta '+(r.i+1)+' de '+N+'</span><span>'+esc(ACTN[ind.act])+'</span></div>'+
+      '<div class="progress"><span style="width:'+(r.i/N*100)+'%"></span></div>'+
+      (q.dg?'<div class="diagram">'+diagram(q.dg)+'</div>':'')+
+      '<h2 class="q-text">'+esc(q.text)+'</h2><div class="opts">'+
+      it.opts.map(function(o,k){
+        var cls="",mk="";
+        if(p!==null){if(o.ok){cls=" ok";mk="✓ Correcta";}else if(k===p){cls=" bad";mk="✕";}}
+        return '<button type="button" class="opt'+cls+'" data-a="pick" data-v="'+k+'"'+(p!==null?' disabled':'')+'><span class="key">'+KEYS[k]+'</span><span>'+esc(o.t)+'</span><span class="mark">'+mk+'</span></button>';
+      }).join("")+'</div>'+
+      (p!==null?'<div class="why" role="status"><strong>'+(it.opts[p].ok?'Correcte. ':'No és aquesta. ')+'</strong>'+esc(q.why)+'</div><button type="button" class="btn" data-a="next">'+(last?'Veure el resultat':'Següent')+'</button>':'');
+  }else if(r){
+    var tot=r.items.length,okc=r.res.filter(Boolean).length,errs=[];
+    r.items.forEach(function(it,i){if(!r.res[i])errs.push(it);});
+    h='<h2>Resultat</h2><div class="score">'+okc+'/'+tot+'</div>';
+    if(errs.length){h+='<h3>Per repassar</h3>'+errs.map(function(it){var c=it.opts.filter(function(o){return o.ok;})[0].t;return '<div class="err"><p><strong>'+esc(it.q.text)+'</strong></p><p>Resposta correcta: '+esc(c)+'</p><p>'+esc(it.q.why)+'</p></div>';}).join("");}
+    else{h+='<p>Cap error. Molt bé.</p>';}
+    h+=doneNote()+'<button type="button" class="btn" data-a="menu">Continua</button>';
+  }
+  root.innerHTML=h;
+}
+$("#ind").addEventListener("click",function(e){
+  var b=e.target.closest("[data-a]");if(!b)return;
+  var a=b.dataset.a,v=b.dataset.v,r=ind.run,sh=ind.sheet;
+  if(a==="act"){
+    if(v==="T"||v==="B"){openLab(v==="T"?1:2);return;}
+    startAct(v);
+  }
+  else if(a==="menu"){ind.act=null;ind.run=null;ind.sheet=null;}
+  else if(a==="keep"){saved.keep=true;}
+  else if(a==="ask"){saved.ask=true;}
+  else if(a==="noask"){saved.ask=false;}
+  else if(a==="wipe"){wipeAll();}
+  else if(a==="pick"&&r&&r.picked===null){r.picked=+v;r.res[r.i]=r.items[r.i].opts[+v].ok;rec(ind.act,r.items[r.i].q.id,r.res[r.i]);}
+  else if(a==="next"&&r){if(r.i===r.items.length-1){r.done=true;fin(ind.act);}else{r.i++;r.picked=null;}}
+  else if(a==="check"&&sh&&!sh.checked){
+    var vals=sh.items.map(function(it,i){return $("#sh-"+i).value;});
+    var miss=vals.filter(function(x){return x==="";}).length;
+    if(miss){$("#sh-msg").textContent="Falten "+miss+(miss===1?" resposta":" respostes")+". Respon-les totes.";return;}
+    sh.items.forEach(function(it,i){it.sel=+vals[i];it.ok=it.sel===it.ai;rec(ind.act,it.id,it.ok);});sh.checked=true;fin(ind.act);
+  }
+  else if(a==="dpick"&&ind.dr&&!ind.dr.checked){ind.dr.items[+b.dataset.i].sel=+b.dataset.j;}
+  else if(a==="dcheck"&&ind.dr&&!ind.dr.checked){var dd=ind.dr;if(dd.items.some(function(x){return x.sel===null;})){dd.msg="Falta triar algun dibuix.";}else{dd.items.forEach(function(x){x.ok=x.opts[x.sel]===x.k;rec("D",x.k,x.ok);});dd.checked=true;dd.msg="";fin("D");}}
+  else if(a==="ccheck"){checkC();}
+  else if(a==="fcheck"&&!FORM.F.checked){checkF();}
+  renderInd();
+  if(a!=="dpick"){var t=$("#ind");if(t&&t.scrollIntoView)try{t.scrollIntoView({block:"nearest"});}catch(x){}}
+});
+function onField(e){var t=e.target;if(t&&t.dataset&&t.dataset.f){setF(t.dataset.f,t.value);save();}}
+$("#ind").addEventListener("input",onField);
+$("#ind").addEventListener("change",onField);
+
+/* ---------- Laboratori 1: triangula-ho ---------- */
+var l1={diag:"none",dir:1,f:60};
+function renderL1(){
+  var L=140,A={x:110,y:238},B={x:250,y:238},F=l1.f/100;
+  var s=l1.dir*F*(l1.diag==="none"?0.8*L:3);
+  var h=Math.sqrt(L*L-s*s),C={x:A.x+s,y:A.y-h},D={x:B.x+s,y:A.y-h};
+  function dist(p,q){return Math.sqrt((p.x-q.x)*(p.x-q.x)+(p.y-q.y)*(p.y-q.y));}
+  var out="",dcls="",dline="";
+  if(l1.diag!=="none"){
+    var P=l1.diag==="ad"?A:B,R=l1.diag==="ad"?D:C,d0=L*Math.SQRT2,d1=dist(P,R),delta=d1-d0;
+    if(F===0||Math.abs(delta)<0.05){out="La diagonal no treballa: no hi ha força.";}
+    else if(delta>0){dcls=" t";out="La diagonal s'allarga: treballa a <b>tracció</b>. El marc gairebé no es deforma.";}
+    else{dcls=" c";out="La diagonal s'escurça: treballa a <b>compressió</b>. El marc gairebé no es deforma.";}
+    dline='<line class="bar'+dcls+'" x1="'+P.x+'" y1="'+P.y+'" x2="'+R.x.toFixed(1)+'" y2="'+R.y.toFixed(1)+'"/>';
+  }else{
+    out=F===0?"Sense força: el marc és quadrat.":"Sense diagonal el marc es deforma i s'inclina. Deformació: <b>"+Math.round(Math.abs(s)/(0.8*L)*100)+" %</b> del màxim.";
+  }
+  var len=18+F*60,fa="";
+  if(F>0){fa=l1.dir>0?arrow(Math.round(C.x-len-8),Math.round(C.y),Math.round(C.x-8),Math.round(C.y)):arrow(Math.round(D.x+len+8),Math.round(D.y),Math.round(D.x+8),Math.round(D.y));}
+  var hatch="";for(var x=80;x<=280;x+=14){hatch+='<line class="ground" x1="'+x+'" y1="246" x2="'+(x-8)+'" y2="258"/>';}
+  var svg='<line class="ground" x1="80" y1="246" x2="280" y2="246"/>'+hatch+
+    '<line class="bar" x1="'+A.x+'" y1="'+A.y+'" x2="'+C.x.toFixed(1)+'" y2="'+C.y.toFixed(1)+'"/>'+
+    '<line class="bar" x1="'+B.x+'" y1="'+B.y+'" x2="'+D.x.toFixed(1)+'" y2="'+D.y.toFixed(1)+'"/>'+
+    '<line class="bar" x1="'+C.x.toFixed(1)+'" y1="'+C.y.toFixed(1)+'" x2="'+D.x.toFixed(1)+'" y2="'+D.y.toFixed(1)+'"/>'+
+    '<line class="bar" x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'"/>'+dline+
+    [A,B,C,D].map(function(p){return '<circle class="joint" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="6"/>';}).join("")+fa+
+    '<text class="svgtext" x="12" y="20">Taronja: tracció · Blau: compressió</text>';
+  $("#s1").innerHTML=svg;$("#l1-out").innerHTML=out;
+}
+var simLock={1:"none",2:"none"};
+function bindChips(id,fn){
+  $(id).addEventListener("click",function(e){
+    if(simLock[1]!=="none")return;
+    var b=e.target.closest(".chip");if(!b)return;
+    $$(".chip",$(id)).forEach(function(c){c.setAttribute("aria-pressed",c===b);});fn(b.dataset.v);
+  });
+}
+bindChips("#l1-diag",function(v){l1.diag=v;renderL1();});
+bindChips("#l1-dir",function(v){l1.dir=+v;renderL1();});
+$("#l1-f").addEventListener("input",function(e){if(simLock[1]==="all")return;l1.f=+e.target.value;renderL1();});
+
+/* ---------- Laboratori 2: biga plana o de cantell ---------- */
+function beam(y0,t,sag,sup){
+  var x1=44,x2=316,xm=180,d='M'+x1+' '+y0+' Q'+xm+' '+(y0+2*sag).toFixed(1)+' '+x2+' '+y0,yc=y0+sag,top=yc-t/2,gy=y0+t/2+sup;
+  return '<polygon class="body" points="'+x1+','+(y0+t/2)+' '+(x1-12)+','+gy+' '+(x1+12)+','+gy+'"/>'+
+    '<polygon class="body" points="'+x2+','+(y0+t/2)+' '+(x2-12)+','+gy+' '+(x2+12)+','+gy+'"/>'+
+    '<line class="ground" x1="24" y1="'+gy+'" x2="336" y2="'+gy+'"/>'+
+    '<path d="'+d+'" class="beamline" stroke-width="'+(t+4)+'"/><path d="'+d+'" class="beaminner" stroke-width="'+(t-1)+'"/>'+
+    arrow(xm,Math.round(top-38),xm,Math.round(top-2));
+}
+function renderL2(){
+  var F=+$("#l2-f").value,flat=F*0.45,edge=flat/16;
+  var svg='<text class="svgtext" x="12" y="18">Plana (40 mm d\'ample, 10 mm d\'alt)</text>'+beam(72,10,flat,56)+
+    '<text class="svgtext" x="12" y="160">De cantell (10 mm d\'ample, 40 mm d\'alt)</text>'+beam(240,40,edge,24);
+  $("#s2").innerHTML=svg;
+  $("#l2-out").innerHTML=F===0?"Sense pes: cap biga es doblega.":"Quant es doblega la biga plana: <b>"+F+"</b> unitats<br>Quant es doblega la biga de cantell: <b>"+(F/16).toFixed(1).replace(".",",")+"</b> unitats<br>La de cantell es doblega unes <b>16 vegades</b> menys.";
+}
+$("#l2-f").addEventListener("input",function(){if(simLock[2]==="all")return;renderL2();});
+
+/* ---------- Reptes del laboratori: respondre abans de veure el simulador ---------- */
+var LABQ={
+ 1:{act:"T",items:[
+  {tema:"elements",q:"Tens un marc quadrat fet amb quatre barres unides per les puntes, que poden girar. No té diagonal. L'empenyes de costat cap a la dreta. Què passarà?",opts:["Es deformarà i quedarà inclinat","No es mourà gens","Es trencarà una barra","Es farà més petit"],why:"Sense diagonal, les puntes poden girar i el quadrat es deforma i s'inclina.",cfg:{diag:"none",dir:1,f0:0,f:60}},
+  {tema:"esforcos",q:"Hi afegim una diagonal ↗ (de baix a l'esquerra cap a dalt a la dreta) i empenyem cap a la dreta. La diagonal treballa a...",opts:["Tracció","Compressió","Flexió","Torsió"],why:"Quan empenyem cap a la dreta, els extrems de la diagonal se separen: s'allarga i treballa a tracció.",cfg:{diag:"ad",dir:1,f0:0,f:60}},
+  {tema:"esforcos",q:"Amb la mateixa diagonal ↗, ara empenyem cap a l'esquerra. La diagonal passa a treballar a...",opts:["Compressió","Tracció","Flexió","Cisallament"],why:"Quan empenyem cap a l'esquerra, els extrems de la diagonal s'acosten: s'escurça i treballa a compressió.",cfg:{diag:"ad",dir:-1,f0:0,f:60}},
+  {tema:"esforcos",q:"Canviem la diagonal per l'altra (↖) i empenyem cap a la dreta. La diagonal treballa a...",opts:["Compressió","Tracció","Torsió","Cisallament"],why:"Ara els extrems de la diagonal s'acosten quan empenyem cap a la dreta: compressió.",cfg:{diag:"bc",dir:1,f0:0,f:60}},
+  {tema:"elements",q:"Per què la diagonal evita que el marc es deformi?",opts:["Perquè el marc queda fet de triangles, i els triangles no es deformen","Perquè la diagonal pesa més","Perquè la diagonal és de material diferent","Perquè parteix la força en dues parts iguals"],why:"Un triangle no es pot deformar si els costats no canvien de llargada. Per això posem triangles a les estructures.",cfg:{diag:"ad",dir:1,f0:0,f:60}}
+ ]},
+ 2:{act:"B",items:[
+  {tema:"esforcos",q:"Dues bigues iguals, del mateix material i amb el mateix pes a sobre: una plana i l'altra de cantell. Quina es doblegarà menys?",opts:["La de cantell","La plana","Es doblegaran igual","Depèn del color"],why:"De cantell, la biga és més alta (de dalt a baix) i es doblega molt menys.",cfg:{f0:0,f:60}},
+  {tema:"esforcos",q:"El pes està al 40 %. Si posem el doble de pes (80 %), cada biga es doblega...",opts:["Aproximadament el doble","El mateix","La meitat","16 vegades més"],why:"Aquí, el doble de pes fa que la biga es doblegui el doble. El 16 és la diferència entre les dues bigues, no el que canvia quan posem més pes.",cfg:{f0:40,f:80}},
+  {tema:"elements",q:"Per què les bigues d'un sostre es posen de cantell?",opts:["Perquè així es doblega menys amb la mateixa quantitat de material","Perquè queda més bonic","Perquè pesa menys","Perquè lliga millor amb el pilar"],why:"Amb la biga de cantell aguanta més sense afegir material.",cfg:{f0:0,f:60}},
+  {tema:"esforcos",q:"Quin esforç pateixen les dues bigues, que descansen pels extrems i tenen pes al mig?",opts:["Flexió","Tracció","Torsió","Cisallament"],why:"El pes empeny la biga cap avall pel mig i la corba: flexió.",cfg:{f0:0,f:60}}
+ ]}
+};
+LABQ[1].items=LABQ[1].items.slice(0,3);
+LABQ[2].items=[LABQ[2].items[0],LABQ[2].items[2],LABQ[2].items[3]];
+var labs={1:null,2:null};
+function openLab(n){show("laboratori");$("#lab-1").hidden=(n!==1);$("#lab-2").hidden=(n!==2);try{window.scrollTo(0,0);}catch(e){}}
+function backToActs(){ind.act=null;ind.run=null;ind.sheet=null;renderInd();show("individual");}
+function lockLab(n,mode){
+  simLock[n]=mode;
+  if(n===1)$$("#l1-diag .chip, #l1-dir .chip").forEach(function(c){c.disabled=(mode!=="none");});
+  $("#l"+n+"-f").disabled=(mode==="all");
+}
+function setSim(n,cfg,f){
+  if(n===1){
+    l1.diag=cfg.diag;l1.dir=cfg.dir;l1.f=f;
+    $$("#l1-diag .chip").forEach(function(c){c.setAttribute("aria-pressed",c.dataset.v===cfg.diag);});
+    $$("#l1-dir .chip").forEach(function(c){c.setAttribute("aria-pressed",(+c.dataset.v)===cfg.dir);});
+    $("#l1-f").value=f;renderL1();
+  }else{$("#l2-f").value=f;renderL2();}
+}
+function labReset(n){
+  var Q=LABQ[n],p=prog[Q.act],N=Q.items.length,k=Object.keys(p.first).length,res=[];
+  for(var i=0;i<N&&i<k;i++)res[i]=!!p.first[i];
+  labs[n]={i:Math.min(k,N-1),picked:null,res:res,opts:null,done:k>=N};
+  labShow(n);
+}
+function labShow(n){
+  var L=labs[n],Q=LABQ[n],root=$("#c"+n),h="",N=Q.items.length;
+  if(L.done){
+    var list=Q.items.map(function(it,i){return {tema:it.tema,ok:!!L.res[i]};});
+    var ok=list.filter(function(x){return x.ok;}).length;
+    lockLab(n,"none");prog[Q.act].done=true;updTab();
+    h='<div class="lq"><h3>Resultat</h3><div class="score">'+ok+'/'+N+'</div>'+barsHtml(byTema(list))+'<p class="note">Ara el simulador és lliure: pots provar-hi el que vulguis.</p>'+doneNote()+'<div class="row"><button type="button" class="btn" data-a="lback">Continua</button></div></div>';
+  }else{
+    var it=Q.items[L.i],p=L.picked;
+    if(!L.opts)L.opts=shuffle(it.opts.slice(0,3).map(function(t,i){return {t:t,ok:i===0};}));
+    if(p===null){setSim(n,it.cfg,it.cfg.f0);lockLab(n,"all");}
+    else{setSim(n,it.cfg,it.cfg.f);lockLab(n,"slider");}
+    h='<div class="lq"><div class="q-head"><span>Repte '+(L.i+1)+' de '+N+'</span><span>'+(p===null?'Simulador bloquejat':'Simulador desbloquejat')+'</span></div><div class="progress"><span style="width:'+(L.i/N*100)+'%"></span></div>'+
+      '<h2 class="q-text">'+esc(it.q)+'</h2><div class="opts">'+
+      L.opts.map(function(o,k){
+        var cls="",mk="";
+        if(p!==null){if(o.ok){cls=" ok";mk="✓ Correcta";}else if(k===p){cls=" bad";mk="✕";}}
+        return '<button type="button" class="opt'+cls+'" data-a="lpick" data-n="'+n+'" data-v="'+k+'"'+(p!==null?' disabled':'')+'><span class="key">'+KEYS[k]+'</span><span>'+esc(o.t)+'</span><span class="mark">'+mk+'</span></button>';
+      }).join("")+'</div>'+
+      (p===null?'<p class="note">Marca una resposta per desbloquejar el simulador.</p>':'<div class="why" role="status"><strong>'+(L.opts[p].ok?'Correcte. ':'No és aquesta. ')+'</strong>'+esc(it.why)+' Comprova-ho al simulador: pots moure el control.</div><button type="button" class="btn" data-a="lnext" data-n="'+n+'">'+(L.i===N-1?'Veure el resultat':'Següent repte')+'</button>')+'</div>';
+  }
+  root.innerHTML=h;
+}
+$("#p-laboratori").addEventListener("click",function(e){
+  var b=e.target.closest("[data-a]");if(!b)return;
+  var a=b.dataset.a,n=+b.dataset.n;
+  if(a==="lback"){backToActs();return;}
+  var L=labs[n];
+  if(a==="lpick"&&L&&L.picked===null){L.picked=+b.dataset.v;L.res[L.i]=L.opts[L.picked].ok;rec(LABQ[n].act,L.i,L.res[L.i]);labShow(n);}
+  else if(a==="lnext"&&L){if(L.i===LABQ[n].items.length-1)L.done=true;else{L.i++;L.picked=null;L.opts=null;}labShow(n);}
+});
+
+/* ---------- Pestanyes ---------- */
+var TABS=["individual","laboratori","lliura","recull","professor"];
+$("#lab-back").addEventListener("click",backToActs);
+function show(t){
+  if(TABS.indexOf(t)<0)t="individual";
+  $$(".tab").forEach(function(b){b.setAttribute("aria-selected",b.dataset.tab===t);});
+  $$(".panel").forEach(function(p){p.hidden=p.id!=="p-"+t;});
+  if(t==="lliura")renderLliura();
+}
+$$(".tab").forEach(function(b){b.addEventListener("click",function(){try{location.hash=b.dataset.tab;}catch(e){}show(b.dataset.tab);});});
+window.addEventListener("hashchange",function(){show(location.hash.slice(1));});
+
+/* ---------- Lliura: un sol codi amb tota la feina ---------- */
+var lastCode="";
+function resText(k){
+  var p=prog[k];if(!p.seen)return "—";
+  if(k==="C")return p.ok+" objectes completats de 3";
+  return p.ok+" encerts de "+p.seen+" respostes";
+}
+function renderLliura(){
+  $("#lli-tab").innerHTML='<table><tr><th>Activitat</th><th>Estat</th><th>Resultat</th></tr>'+ACT_ORDER.map(function(k){
+    var p=prog[k];return '<tr><td>'+esc(ACTN[k])+'</td><td>'+(p.done?'<strong>Fet</strong>':(p.seen?'A mitges':'Pendent'))+'</td><td>'+esc(resText(k))+'</td></tr>';
+  }).join("")+'</table><p class="note">Has acabat <strong>'+doneN()+' de '+ACT_ORDER.length+'</strong> activitats.</p>';
+}
+function buildRec(nm){
+  var acts={};
+  ACT_ORDER.forEach(function(k){if(prog[k].seen>0)acts[k]=[prog[k].ok,prog[k].seen];});
+  return {n:nm,acts:acts,s:null,d:nowStr()};
+}
+$("#lli-go").addEventListener("click",function(){
+  var out=$("#lli-out"),nm=($("#lli-name").value||"").trim();
+  if(!nm){out.innerHTML='<p class="note"><strong>Escriu el teu nom abans de crear el codi.</strong></p>';return;}
+  if(!ACT_ORDER.some(function(k){return prog[k].seen>0;})){out.innerHTML='<p class="note"><strong>Encara no has fet cap activitat.</strong></p>';return;}
+  lastName=nm;save();lastCode=enc(buildRec(nm));
+  out.innerHTML='<p class="note">El teu codi:</p><textarea id="lli-code" rows="3" readonly>'+esc(lastCode)+'</textarea><div class="row" style="margin-top:10px"><button type="button" class="btn" data-a="ccopy">Copia el codi</button><button type="button" class="btn ghost" data-a="cdl">Descarrega el fitxer</button></div><p class="note" id="lli-msg" role="status"></p>';
+});
+$("#lli-out").addEventListener("click",function(e){
+  var b=e.target.closest("[data-a]");if(!b)return;
+  if(b.dataset.a==="ccopy")copyText(lastCode,function(ok){$("#lli-msg").textContent=ok?"Codi copiat.":"No s'ha pogut copiar. Selecciona el text del quadre i copia'l a mà.";});
+  else{var f=saveText("resultat-repas.txt",lastCode);$("#lli-msg").textContent=f?"Fitxer descarregat.":"No s'ha pogut descarregar. Copia el codi a mà.";}
+});
+
+/* ---------- Recull (professorat) ---------- */
+var rcRows=[],rcHead=[];
+var CORE=ACT_ORDER.slice();
+var WD={Q:20,V:15,R:10,O:10,D:10,T:10,B:10,C:10,F:5};
+var TD={Q:8,V:8,R:6,O:6,D:5,T:3,B:3,C:3,F:3};
+var SHORT={Q:"Qüestionari",V:"Vertader o fals",R:"Relaciona",O:"Omple",D:"Dibuixos",C:"Caça",F:"Pont",T:"Triangula-ho",B:"Biga"};
+function dkey(d){return d.slice(3,5)+d.slice(0,2)+d.slice(6);}
+var LV=["NA","NA+","AS","AS+","AN","AN+","AE"];
+function level(n){
+  var idx=0;
+  for(var i=0;i<6;i++){var th=num($("#th-"+i).value);if(th!==null&&n>=th)idx=i+1;}
+  return LV[idx];
+}
+function cm(x){return x.toFixed(2).replace(".",",");}
+function buildW(){
+  $("#rc-w").innerHTML='<div class="scroll"><table><tr><th>Activitat</th><th>Pes (%)</th><th>Objectiu: encerts per a la nota màxima</th></tr>'+CORE.map(function(k){
+    return '<tr><td>'+esc(ACTN[k])+'</td><td><input type="text" id="w-'+k+'" value="'+WD[k]+'" size="3" inputmode="decimal"></td><td><input type="text" id="t-'+k+'" value="'+TD[k]+'" size="3" inputmode="decimal"></td></tr>';
+  }).join("")+'</table></div><p class="note" id="w-sum"></p>';
+}
+function wval(k){var x=num($("#w-"+k).value);return x===null||x<0?0:x;}
+function tval(k){var x=num($("#t-"+k).value);return x===null||x<=0?1:x;}
+function renderRc(){
+  var tot=0;CORE.forEach(function(k){tot+=wval(k);});
+  $("#w-sum").textContent="Suma dels pesos: "+String(Math.round(tot*100)/100).replace(".",",")+". La nota es calcula sobre aquesta suma, no cal que sigui 100. Posa 0 a les activitats que no vulgueu comptar.";
+  var lines=$("#rc-in").value.split(/\n/).map(function(x){return x.trim();}).filter(Boolean),bad=[],map={},keys=[];
+  lines.forEach(function(ln,i){
+    var o=dec(ln);if(!o){bad.push(i+1);return;}
+    var k=String(o.n).toLowerCase().replace(/\s+/g," ").trim();
+    if(!map[k]){map[k]={name:o.n,acts:{},s:null,sd:"",last:"",n:0};keys.push(k);}
+    var st=map[k];st.n++;
+    if(!st.last||dkey(o.d)>dkey(st.last))st.last=o.d;
+    Object.keys(o.acts).forEach(function(a){var c=st.acts[a];if(!c)st.acts[a]=[o.acts[a][0],o.acts[a][1]];else{c[0]=Math.max(c[0],o.acts[a][0]);c[1]=Math.max(c[1],o.acts[a][1]);}});
+    if(o.s&&(!st.sd||dkey(o.d)>=dkey(st.sd))){st.s=o.s;st.sd=o.d;}
+  });
+  keys.sort(function(a,b){return map[a].name.localeCompare(map[b].name,"ca");});
+  var notes=[];
+  rcRows=keys.map(function(k){
+    var st=map[k],sc=0,fet=0;
+    CORE.forEach(function(a){var c=st.acts[a];if(c&&c[1]>0)fet++;sc+=wval(a)*Math.min(1,(c?c[0]:0)/tval(a));});
+    var n=tot>0?Math.round(sc/tot*1000)/100:null;
+    if(n!==null)notes.push(n);
+    var row=[st.name,n===null?"–":cm(n),n===null?"–":level(n),fet+"/"+CORE.length];
+    CORE.forEach(function(a){var c=st.acts[a];row.push(c&&c[1]>0?c[0]+"/"+c[1]:"–");});
+    row.push(st.n);row.push(st.last);return row;
+  });
+  rcHead=["Alumne","Nota /10","Assoliment","Activitats fetes"].concat(CORE.map(function(a){return SHORT[a];}),["Lliuraments","Darrer lliurament"]);
+  var avg=notes.length?cm(notes.reduce(function(a,b){return a+b;},0)/notes.length):"–";
+  var h='<p class="note"><strong>'+rcRows.length+'</strong> alumnes · nota mitjana: <strong>'+avg+'</strong>'+(bad.length?' · <strong>línies no vàlides o modificades: '+bad.join(", ")+'</strong>':'')+'</p>';
+  if(rcRows.length){h+='<div class="scroll"><table><tr>'+rcHead.map(function(x){return '<th>'+x+'</th>';}).join("")+'</tr>'+rcRows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+esc(c)+'</td>';}).join("")+'</tr>';}).join("")+'</table></div><p class="note">Cada cel·la d\'activitat és encerts/respostes (a Caça, objectes complets/començats). Un guionet vol dir que no l\'ha fet. La nota és una proposta: la qualificació final és decisió teva.</p>';}
+  $("#rc-out").innerHTML=h;
+}
+if($("#rc-go")){
+  buildW();
+  $("#rc-go").addEventListener("click",renderRc);
+  function again(){if($("#rc-in").value.trim())renderRc();else renderRcSum();}
+  function renderRcSum(){var tot=0;CORE.forEach(function(k){tot+=wval(k);});$("#w-sum").textContent="Suma dels pesos: "+String(Math.round(tot*100)/100).replace(".",",")+". La nota es calcula sobre aquesta suma, no cal que sigui 100. Posa 0 a les activitats que no vulgueu comptar.";}
+  $("#rc-th").addEventListener("input",again);
+  $("#rc-w").addEventListener("input",again);
+  renderRcSum();
+  $("#rc-copy").addEventListener("click",function(){var b=this;copyText([rcHead].concat(rcRows).map(function(r){return r.join("\t");}).join("\n"),function(ok){b.textContent=ok?"Taula copiada":"No s'ha pogut copiar";setTimeout(function(){b.textContent="Copia la taula";},2200);});});
+  $("#rc-dl").addEventListener("click",function(){var csv="﻿"+[rcHead].concat(rcRows).map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(";");}).join("\r\n");var b=this,f=saveText("resultats-repas.csv",csv,"text/csv");b.textContent=f?"CSV descarregat":"No s'ha pogut descarregar";setTimeout(function(){b.textContent="Descarrega CSV";},2200);});
+}
+
+restore();renderInd();renderL1();renderL2();labReset(1);labReset(2);updTab();show(location.hash.slice(1));
+})();
+
+</script>
+</body>
+</html>
